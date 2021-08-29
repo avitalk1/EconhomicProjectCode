@@ -22,7 +22,7 @@ UserTestTable = ddb.Table('UserTest')
 RoomsStatusTable = ddb.Table('RoomsStatus')
 
 
-####עובדדדדדדדדד טילל !!     
+ 
 
 
 def lambda_handler(event, context):
