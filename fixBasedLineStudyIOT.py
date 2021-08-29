@@ -77,7 +77,7 @@ def lambda_handler(event, context):
                             response2 = NotifyUserTable.put_item(Item={"floor": "","NotifyUserID": str(notifyUserID), "room":"","userAnswer": 0,"UserID": user_uuid ,"op": i,"msgToUser": msgToUser})
                             
                 if already_mod==0:
-                    # TODO: write code...             
+           
                     print(" - " * 10)
                            
                     if n_i["userRefused"]["N"] != o_i["userRefused"]["N"]:
@@ -214,8 +214,7 @@ def lambda_handler(event, context):
                 
         
         
-    
-    # TODO implement
+
     return {
         'statusCode': 200,
         'body': json.dumps('Hello from Lambda!')
