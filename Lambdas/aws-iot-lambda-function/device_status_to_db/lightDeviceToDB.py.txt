@@ -24,11 +24,10 @@ UserConfigTable = ddb.Table('UserConfig')
 
 def lambda_handler(event, context):
     
-    # TODO implement
+    
     response = RoomsStatusTable.get_item(Key={'UserID' : event['uuid']})
     response_2 = UserConfigTable.get_item(Key={'UserID' : event['uuid']})
     place = event["floor"] +"."+event["room"]
-    #print(response['Item']["floor"]["room"]["devices"]["lights"]["lightStatus"][0]["isOn"])
     
     # get the current light index
     tempLst =response['Item'][event["floor"]][event["room"]]["devices"]["lights"]["lightStatus"]
@@ -55,13 +54,7 @@ def lambda_handler(event, context):
               "lastTimeSetOn": time,
               "number": event["number"],
               "SetOnLogs": [{"setOnDate" : set_time,"setOffTime":"null", "whoTurnOff": "null"}]})
-            # amount = response["Item"][event["floor"]][event["room"]]["devices"]["lights"]["lightsAmount"] +1
-              
-            # topic += " , "+place+".devices.lights.lightStatus.lightsAmount= :n"
-            # response4 = RoomsStatusTable.update_item(Key ={'UserID' :  event['uuid']}, 
-            # UpdateExpression=topic ,
-            # ExpressionAttributeValues={':n' : amount ,':c': lightList, ':k' : new_light },
-            # ReturnValues="UPDATED_NEW")
+           
         else:
             new_light = [{
               "insideLightsLevel": response["Item"][event["floor"]][event["room"]]["insideLightsLevel"],
@@ -70,12 +63,8 @@ def lambda_handler(event, context):
               "lastTimeSetOn": "null",
               "number": event["number"],
               "SetOnLogs": []}]
-            # response4 = RoomsStatusTable.update_item(Key ={'UserID' :  event['uuid']},
-            # UpdateExpression=topic ,
-            # ExpressionAttributeValues={':c': lightList, ':k' : new_light },
-            # ReturnValues="UPDATED_NEW")
-        #doSomthing... need to add to the light list 
-        # topic += " , "+place+".devices.lights.lightStatus.lightsAmount= :n"
+          
+        #add to the light list 
         amount = response["Item"][event["floor"]][event["room"]]["devices"]["lights"]["lightsAmount"] +1
         response4 = RoomsStatusTable.update_item(Key ={'UserID' :  event['uuid']},
         UpdateExpression=topic ,
@@ -96,6 +85,7 @@ def lambda_handler(event, context):
         if event["status"] == "on":
             if index != -1:
                 log_index =response['Item'][event["floor"]][event["room"]]["devices"]["lights"]["lightStatus"][inx]["SetOnLogs"][index]
+                #Error detection - if the user turned on the device shortly after we turned it off
                 if log_index["whoTurnOff"] == "us":
                     turn_off_time = datetime.strptime(log_index["setOffTime"],"%d-%m-%Y,%H:%M:%S")
                     diff = now - turn_off_time
