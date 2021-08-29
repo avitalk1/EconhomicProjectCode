@@ -42,7 +42,7 @@ def lambda_handler(event, context):
         
         
         if index == -1:
-        # print(tapWater["whoIsOn"])
+        #add new open window to room
             
             k=list()
             k.append(n)
@@ -57,6 +57,7 @@ def lambda_handler(event, context):
             ReturnValues="UPDATED_NEW")
             print("insert new tapwater")
         else:
+        #window exist - open window
             update_topic ="set " + intro_update_topic+".windowsStatus["+str(index)+"].isOn= :a, "
             update_topic += intro_update_topic+".windowsStatus["+str(index)+"].SetOnLogs.setOnTime =:l,"
             update_topic += intro_update_topic+".windowsStatus["+str(index)+"].SetOnLogs.whoTurnOn =:r"
@@ -79,30 +80,8 @@ def lambda_handler(event, context):
             
             
     if event["status"] == "close" and not index==-1: 
+    #window exist - close window
         window_log = response['Item'][event["floor"]][event["room"]]["devices"]["windowDevices"]["windowsStatus"][index]["SetOnLogs"]
-        # if window_log["whoTurnOff"] == "us":
-        #     turn_off_time = datetime.strptime(window_log["setOffTime"],"%d-%m-%Y,%H:%M:%S")
-        #     diff = now - turn_off_time
-        #     minutessince = int(diff.total_seconds() / 60)
-        #     if minutessince => 5: 
-        #         print("update an error in baseline update userconfig ")
-        #         if window_log["reason"] == "outSide_lightLevel":
-        #             print("lightsop")
-        #             avg_diff =  (Decimal(response_2['Item']["op"]["lightsOp"]["errorCounter"] * response_2['Item']["op"]["lightsOp"]["averageTimeError"]) + Decimal(minutessince) ) /(response_2['Item']["op"]["lightsOp"]["errorCounter"] +1)
-        #             _topic_= "set op.waterTapOp.errorCounter = :g , op.lightsOp.averageTimeError =:t "
-        #             response_3 = UserConfigTable.update_item(Key ={'UserID' :  event['uuid']},
-        #             UpdateExpression=_topic_ ,
-        #             ExpressionAttributeValues={':t':avg_diff,':g':(response_2['Item']["op"]["lightsOp"]["errorCounter"] + 1) },
-        #             ReturnValues="UPDATED_NEW") 
-                    
-        #         if window_log["reason"] == "outSide_temperature":
-        #             print("ac-turnoff-op")
-        #             avg_diff =  (Decimal(response_2['Item']["op"]["lightsOp"]["errorCounter"] * response_2['Item']["op"]["lightsOp"]["averageTimeError"]) + Decimal(minutessince) ) /(response_2['Item']["op"]["lightsOp"]["errorCounter"] +1)
-        #             _topic_= "set op.waterTapOp.errorCounter = :g , op.lightsOp.averageTimeError =:t "
-        #             response_3 = UserConfigTable.update_item(Key ={'UserID' :  event['uuid']},
-        #             UpdateExpression=_topic_ ,
-        #             ExpressionAttributeValues={':t':avg_diff,':g':(response_2['Item']["op"]["lightsOp"]["errorCounter"] + 1) },
-        #             ReturnValues="UPDATED_NEW") לתקן לאופרציה של המזגן
         update_topic ="set " + intro_update_topic+".windowsStatus["+str(index)+"].isOn= :a, "
         update_topic += intro_update_topic+".windowsStatus["+str(index)+"].SetOnLogs.setOffTime =:l,"
         update_topic += intro_update_topic+".windowsStatus["+str(index)+"].SetOnLogs.whoTurnOff =:r"
@@ -124,6 +103,7 @@ def lambda_handler(event, context):
     
     
     if event["status"] == "close" and index==-1: 
+    #add new close window to room
         n = {"isOn": False, "SetOnLogs":{"setOffTime": "Null","setOnTime": "Null", "whoTurnOff": "Null","whoTurnOn":"Null","reason":""} ,"number": event["number" ]}
         k=list()
         k.append(n)
