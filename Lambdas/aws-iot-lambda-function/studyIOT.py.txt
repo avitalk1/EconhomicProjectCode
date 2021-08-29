@@ -31,64 +31,12 @@ def lambda_handler(event, context):
     UserTest_response = UserTestTable.get_item(Key={'UserID' : user_uuid})
     RoomsStatus_response = RoomsStatusTable.get_item(Key={'UserID' : user_uuid})
     
-    #insert_notify = {"floor": floor,"NotifyUserID": str(notifyUserID), "room": room,"userAnswer": 0,"UserID": user_uuid}
-    
+
     auto = UserTest_response['Item']['AutomaticActions']
     doNotify = True
     deviceType = event['type']
-    # opName =""
-    # # notifyString =""
-    # if deviceType =="ac" :
-    #     opName="AcOp"
-    #     # if UserConfig_response['Item']['op']['AcOp']["notifyUserID"] != "Null":
-    #     #     NotifyUser_response = NotifyUserTable.get_item(Key={'NotifyUserID' : UserConfig_response['Item']['op']['AcOp']["notifyUserID"] })
-    #     #     for i in NotifyUser_response:
-    #     #         if str(i["NotifyUserID"]) == UserConfig_response['Item']['op']['AcOp']["notifyUserID"] :
-                    
-    #     #             if i["userAnswer"] ==0:
-    #     doNotify = UserConfig_response['Item']['op']['AcOp']["notifyUserID"]
     
-    # if deviceType =="pump" :
-    #     opName ="waterTapOp"
-    #     # if UserConfig_response['Item']['op']['waterTapOp']["notifyUserID"] != "Null":
-    #     #     NotifyUser_response = NotifyUserTable.get_item(Key={'NotifyUserID' : UserConfig_response['Item']['op']['waterTapOp']["notifyUserID"] })
-            
-    #     #     for i in NotifyUser_response:
-    #     #         if str(i["NotifyUserID"]) == UserConfig_response['Item']['op']['waterTapOp']["notifyUserID"] :
-    #     #             if i["userAnswer"] ==0:
-    #     doNotify =  UserConfig_response['Item']['op']['waterTapOp']["notifyUserID"] 
-    
-    # if deviceType == "lights":
-    #     opName ="lightsOp"
-    #     # if UserConfig_response['Item']['op']['lightsOp']["notifyUserID"] != "Null":
-    #     #     NotifyUser_response = NotifyUserTable.get_item(Key={'NotifyUserID' : UserConfig_response['Item']['op']['lightsOp']["notifyUserID"] })
-            
-    #     #     for i in NotifyUser_response:
-    #     #         if str(i["NotifyUserID"]) == UserConfig_response['Item']['op']["lightsOp"]["notifyUserID"] :
-    #     #             if i["userAnswer"] ==0:
-    #     doNotify =  UserConfig_response['Item']['op']['lightsOp']["notifyUserID"] 
 
-    # if deviceType == "boiler":
-    #     opName ="boilerOp"
-    #     # if UserConfig_response['Item']['op']['boilerOp']["notifyUserID"] != "Null":
-    #     #     NotifyUser_response = NotifyUserTable.get_item(Key={'NotifyUserID' : UserConfig_response['Item']['op']['boilerOp']["notifyUserID"] })
-            
-    #     #     for i in NotifyUser_response['Item']:
-    #     #         # print(i["NotifyUserID"][0])
-    #     #         if str(i["NotifyUserID"]) == UserConfig_response['Item']['op']["boilerOp"]["notifyUserID"] :
-    #     #             if i["userAnswer"] ==0:
-    #     doNotify = UserConfig_response['Item']['op']['boilerOp']["notifyUserID"]
-
-    
-        
-    
-        #update
-
-    
-        
-        
-        
-    
     
     if deviceType =="boiler":
         optimalTemp = UserConfig_response['Item']['op']['boilerOp']['waterOptimalTemperature']
@@ -106,13 +54,12 @@ def lambda_handler(event, context):
                     UpdateExpression=topic ,
                     ExpressionAttributeValues={':g':False },
                     ReturnValues="UPDATED_NEW") 
-                else:
-                    print("noo Too much!!!")
+                
             else:
                 topic = "jobs/" + user_uuid + "/boiler/state" 
                 iot_client.publish(topic=topic,payload=json.dumps({"status":"off"}))
                 print("post mqtt")
-        print("boiler")
+
     else:
         floor = event['floor']
         room = event['room']
@@ -148,8 +95,7 @@ def lambda_handler(event, context):
                             UpdateExpression=topic ,
                             ExpressionAttributeValues={':g':False },
                             ReturnValues="UPDATED_NEW") 
-                        else:
-                            print("noo Too much!!!")     
+  
                         
                         
         if deviceType =="lights":
@@ -178,8 +124,7 @@ def lambda_handler(event, context):
                             UpdateExpression=topic ,
                             ExpressionAttributeValues={':g':False },
                             ReturnValues="UPDATED_NEW") 
-                        else:
-                            print("noo Too much!!!")
+
             else:
                 if study_lightLevel == outSide_lightLevel and is_ac_on == False:
                     if auto['Light'] == True:
@@ -202,21 +147,18 @@ def lambda_handler(event, context):
                             UpdateExpression=topic ,
                             ExpressionAttributeValues={':g':False },
                             ReturnValues="UPDATED_NEW") 
-                        else:
-                            print("noo Too much!!!")     
+
                         
         if deviceType =="ac":
-            # אם מתאמן נראה זאת בעזרת תזוזה מרובה ולכן נשאיר לא משנה מה
             study_emptyRoomTime =UserConfig_response['Item']['op']['AcOp']['emptyRoomTime']
             optimalTemp= UserConfig_response['Item']['op']['AcOp']['roomOptimalTemperature']
             outsideTemperature = RoomsStatus_response['Item']["outsideTemperature"]
             room_temperature = RoomsStatus_response['Item'][floor][room]["roomTemperature"]
-            motion_counter = 0 #
+            motion_counter = 0 
             for day in RoomsStatus_response['Item'][floor][room]["motion"]["movmentLogs"]:
                 if day["motionDate"] == d:
                     motion_counter = day["movementHour"][h]
             
-            #motion_counter = RoomsStatus_response['Item'][floor][room]["motion"]["isRoomEmpty"] צריך למצוא לפי מה אנחנו לוקחים לפי התאריך של היום או של האחרון
             ac_curr_temp = event['temperature']
             if isRoomEmpty==True:
                 print("i here")
@@ -238,12 +180,11 @@ def lambda_handler(event, context):
                             UpdateExpression=topic ,
                             ExpressionAttributeValues={':g':False },
                             ReturnValues="UPDATED_NEW") 
-                        else:
-                            print("noo Too much!!!") 
+
             else:
-                print(motion_counter)
+
                 if motion_counter < 300:
-                    print("im here")
+
                     if outsideTemperature <= optimalTemp:
                         reason="outsideTemperature"
                         if auto['AirConditioner'] == True:
@@ -264,8 +205,7 @@ def lambda_handler(event, context):
                                 UpdateExpression=topic ,
                                 ExpressionAttributeValues={':g':False },
                                 ReturnValues="UPDATED_NEW") 
-                            else:
-                                print("noo Too much!!!")
+          
                     else:    
                         if  optimalTemp >=  ac_curr_temp:
                             if optimalTemp >= room_temperature:
@@ -287,8 +227,7 @@ def lambda_handler(event, context):
                                         UpdateExpression=topic ,
                                         ExpressionAttributeValues={':g':False },
                                         ReturnValues="UPDATED_NEW") 
-                                    else:
-                                        print("noo Too much!!!") 
+                                   
                         else:
                             isWindowOpen = False
                             for window in RoomsStatus_response['Item'][floor][room]["devices"]["windowDevices"]["windowsStatus"]:
@@ -312,27 +251,12 @@ def lambda_handler(event, context):
                                         UpdateExpression=topic ,
                                         ExpressionAttributeValues={':g':False },
                                         ReturnValues="UPDATED_NEW") 
-                                    else:
-                                        print("noo Too much!!!") 
+                                   
                                
-                    # else:
-                    #     diff = weaterTemp - optimalTemp
-                    #     if  diff < 1:
-                    #         if auto['AirConditioner'] == True:
-                    #                 topic =  "jobs/" + user_uuid +'/' + floor + "/" + room + "/ac/state";
-                    #     iot_client.publish(topic=topic,payload=json.dumps({"set_status":"off"}))
-                    #     topic =  "jobs/" + user_uuid + '/' + floor + "/" + room + "/window/state"
-                    #         iot_client.publish(topic=topic,payload=json.dumps({"status":"open","reason":"weaterTemp"}
-                    #              print("post mqtt +open window")
-                    #         else:
-                    #             print("insert item to NotifyUser")
-                    #    response2 = NotifyUserTable.put_item(Item={"floor": floor,"NotifyUserID": str(notifyUserID), "room": room,"userAnswer": 0,"UserID": user_uuid ,"op": opName,"msgToUser": msgToUser})
+                 
                          
                         
 
-                    
-            
-    # TODO implement
     return {
         'statusCode': 200,
         'body': json.dumps('Hello from Lambda!')
