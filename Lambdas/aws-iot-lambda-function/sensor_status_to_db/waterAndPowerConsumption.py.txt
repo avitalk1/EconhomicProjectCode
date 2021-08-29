@@ -37,21 +37,13 @@ def lambda_handler(event, context):
         if event["isOn"] == "on":
             amperSampels =list()
             waterFlowRateSampels =list()
-            print("add new on")
+            print("add new on device")
             if event["sensor"] == "power":
                 amperSampels=[Decimal(str(event["electricitConsumption"]))]
             else:
                 waterFlowRateSampels=[Decimal(str(event["waterConsumption"]))]
-            print("add new on")
-            # if event["DeviceType"] == "combined": 
-            #     if event["sensor"] == "waterFlow":
-            #         x={ "amperSampels": list(),  "DeviceName": event["DeviceName"],  "DeviceType": "combined",  "ElectricityExpenses": list(),  "floor":event["floor"],  "isOn": True,  "LastStartTime": set_time,  "room": event["room"],  "WaterExpenses": list(),  "waterFlowRateSampels": waterFlowRateSampels}
-            #     if event["sensor"] == "power":
-            #         x={"amperSampels": amperSampels,  "DeviceName": event["DeviceName"],  "DeviceType": "combined",  "ElectricityExpenses": list(),  "floor":event["floor"],  "isOn": True,  "LastStartTime": set_time,  "room": event["room"],  "WaterExpenses": list(),  "waterFlowRateSampels": list()}
-            # if event["DeviceType"] == "water":
-            #     x={"DeviceName": event["DeviceName"],  "DeviceType": "water",  "floor":event["floor"],  "isOn": True,  "LastStartTime": set_time,  "room": event["room"],  "WaterExpenses": list(),  "waterFlowRateSampels": waterFlowRateSampels}
-            # if event["DeviceType"] == "electricity":
-            #     x={"amperSampels":amperSampels,  "DeviceName": event["DeviceName"],  "DeviceType": "electricity",  "ElectricityExpenses": list(),  "floor":event["floor"],  "isOn": True,  "LastStartTime": set_time,  "room": event["room"]}
+            
+            
 
             if event["DeviceType"] == "combined":
                 x={"amperSampels": amperSampels,"DeviceName": event["DeviceName"],"DeviceType": "combined","ElectricityExpenses": list(),"floor":event["floor"],"isOn": True,"LastStartTime": set_time,"LastModifyTime": set_time,"room": event["room"],"WaterExpenses": list(),"waterFlowRateSampels": waterFlowRateSampels}
@@ -61,7 +53,7 @@ def lambda_handler(event, context):
                 x={ "amperSampels": amperSampels,  "DeviceName": event["DeviceName"],  "DeviceType": "electricity",  "ElectricityExpenses": list(),  "floor":event["floor"],  "isOn": True,"LastModifyTime": set_time,  "LastStartTime": set_time,  "room": event["room"] }
         
         else:
-            print("add new off")
+            print("add new off device")
             if event["DeviceType"] == "combined":
                 x={"amperSampels": list(),"DeviceName": event["DeviceName"],"DeviceType": "combined","ElectricityExpenses": list(),"floor":event["floor"],"LastModifyTime": "","isOn": False,"LastStartTime": "","room": event["room"],"WaterExpenses": list(),"waterFlowRateSampels": list()}
             if event["DeviceType"] == "water":
@@ -105,7 +97,7 @@ def lambda_handler(event, context):
                 
                 if minutes >= 1:
                     
-                    #כל דקה נחשב צריכה עד כה  
+                    #Calculation of consumption per minute  
                     waterUsage = 0
                     powerUsage =0
                     
@@ -162,7 +154,6 @@ def lambda_handler(event, context):
                             update_topic +=", Devices["+str(index)+"].ElectricityExpenses["+str(powerIndex)+"]  = :g "
                     
                     update_topic+=",Devices["+str(index)+"].LastModifyTime =:t"
-                        # update_topic+=", Devices["+str(index)+"].ElectricityExpenses  = list_append(:e,:m)"
                     print(update_topic)
                     if device["DeviceType"] == "combined":
                         print("updateBoth")
@@ -204,7 +195,7 @@ def lambda_handler(event, context):
                                 ReturnValues="UPDATED_NEW") 
                 
                 else:
-                    # אם לא דקה עגולה נוסיף פשוט לרשימת האמפר   
+                    # If less than a minute has passed since the last time we checked, we will only add to the ampere list 
                     response4 = table.update_item(Key ={'UserID' :  event['uuid']},
                     UpdateExpression=update_topic ,
                     ExpressionAttributeValues={':k':newItem,":w":listUpdate},
@@ -219,7 +210,7 @@ def lambda_handler(event, context):
                 waterUsage = 0
                 powerUsage =0
                 update_topic ="set  Devices["+str(index)+"].isOn = :a "
-                #hours*=3600
+
                 
                 ###########
                 waterIndex =-1
@@ -253,9 +244,6 @@ def lambda_handler(event, context):
                 
                     
                     
-                    
-                    # update_topic +=", Devices["+str(index)+"].WaterExpenses  = list_append(:w,:k),Devices["+str(index)+"].waterFlowRateSampels = :l"
-                    
                 if device["DeviceType"] == "electricity" or device["DeviceType"] == "combined":
                     sum = 0
                     for i in device["amperSampels"]:
@@ -282,9 +270,6 @@ def lambda_handler(event, context):
                         update_topic +=", Devices["+str(index)+"].ElectricityExpenses["+str(powerIndex)+"] = :m,Devices["+str(index)+"].amperSampels = :l"
                 
                     
-                    
-                    
-                    # update_topic+=", Devices["+str(index)+"].ElectricityExpenses  = list_append(:e,:m),Devices["+str(index)+"].amperSampels = :l"
                 print(update_topic)
                 if device["DeviceType"] == "combined":
                     
@@ -301,11 +286,7 @@ def lambda_handler(event, context):
                         ReturnValues="UPDATED_NEW")  
                 else:
                     if device["DeviceType"] == "electricity" :
-                        # response4 = table.update_item(Key ={'UserID' :  event['uuid']},
-                        # UpdateExpression=update_topic ,
-                        # ExpressionAttributeValues={':m':newPowerUsage,":e":device["ElectricityExpenses"],':a':False,":l":list()},
-                        # ReturnValues="UPDATED_NEW")  
-                        
+
                         if powerrIndex==-1:
                             response4 = table.update_item(Key ={'UserID' :  event['uuid']},
                             UpdateExpression=update_topic ,
@@ -320,11 +301,7 @@ def lambda_handler(event, context):
                         print("onlyOne power")
                     else:
                         print("only water")
-                        # response4 = table.update_item(Key ={'UserID' :  event['uuid']},
-                        # UpdateExpression=update_topic ,
-                        # ExpressionAttributeValues={':k':newWaterUsage,":w": device["WaterExpenses"],':a':False,":l":list()},
-                        # ReturnValues="UPDATED_NEW")  
-                        
+                                   
                         if waterIndex==-1:
                             response4 = table.update_item(Key ={'UserID' :  event['uuid']},
                             UpdateExpression=update_topic ,
@@ -336,52 +313,7 @@ def lambda_handler(event, context):
                             ExpressionAttributeValues={':k':newWaterUsage[0],':a':False,":l":list()},
                             ReturnValues="UPDATED_NEW")  
                 
-            
-            # #######################33   
-                # update_topic ="set  Devices["+str(index)+"].isOn = :a ,Devices["+str(index)+"].amperSampels = :l,Devices["+str(index)+"].waterFlowRateSampels = :l"
-                # if device["DeviceType"] == "water" or event['sensor'] == "waterFlow":
-                #     listUpdate = device["WaterExpenses"]    
-                #     avgList=device["waterFlowRateSampels"]
-                #     # consumption = 0
-                    
-                #     update_topic +=", Devices["+str(index)+"].WaterExpenses  = list_append(:w,:k)"
-                    
-                # if device["DeviceType"] == "electricity" or event['sensor'] == "power":
-                #     listUpdate = device["ElectricityExpenses"]
-                #     avgList=device["amperSampels"]
-                #     # consumption = 0 
-                #     update_topic+=", Devices["+str(index)+"].ElectricityExpenses  = list_append(:w,:k)"
-                # consumption = 0
-                # sum = 0
-                # for i in avgList:
-                #     sum+= i
-                    
-                # counter = len(avgList)
-                # if counter== 0:
-                #     counter=1
-                # avg = sum / counter
-                
-                # if event['sensor'] == "waterFlow":
-                #     consumption = ((avg*Decimal(minutes))/(1000))
-                # else:
-                #     consumption = ((avg * Decimal(event["volt"]) *Decimal(hours))/(1000))
-                #     #consumption = ((avg * event["volt"] )/(1000))
-                # newItem = [{"startTime":device["LastStartTime"],"endTime":set_time, "consumption" : consumption}]
-                
-                # print(set_time)
-                # print(sum)
-                # print(counter)
-                # print(avg)
-                # #print(event["volt"])
-                
-                # print("update expanses by time, list of use =list()")
-                # print(newItem[0]["consumption"])
-                
-                # response4 = table.update_item(Key ={'UserID' :  event['uuid']},
-                # UpdateExpression=update_topic ,
-                # ExpressionAttributeValues={':k':newItem,":w":listUpdate,':a':False,":l":list()},
-                # ReturnValues="UPDATED_NEW")   
-                # print(hours)
+
                 
         else:
             if event["isOn"] == "on":
@@ -406,23 +338,10 @@ def lambda_handler(event, context):
                 print(set_time)
             else:
                 print(event)
-                
-                print("whyyyy")
                 print(device)
                 print(date_time.strftime("%d-%m-%Y,%H:%M:%S"))
     
-    
-    # update_topic ="set " + intro_update_topic+".waterTapStatus  = list_append(:w,:k), "
-    # update_topic += intro_update_topic+".waterTapAmount =:l"
-    # print(update_topic)
-    
-    # response4 = table.update_item(Key ={'UserID' :  event['uuid']},
-    # UpdateExpression=update_topic ,
-    # ExpressionAttributeValues={':k':k,":w":response['Item'][event["floor"]][event["room"]]["devices"]["waterTap"]["waterTapStatus"],":l" : (response['Item'][event["floor"]][event["room"]]["devices"]["waterTap"]["waterTapAmount"]+1)},
-    # ReturnValues="UPDATED_NEW") 
-    # print("insert new tapwater")
-    
-    # TODO implement
+
     return {
         'statusCode': 200,
         'body': json.dumps('Hello from Lambda!')
