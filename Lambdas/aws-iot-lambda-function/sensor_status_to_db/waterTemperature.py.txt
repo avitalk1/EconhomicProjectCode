@@ -10,7 +10,7 @@ ddb = boto3.resource('dynamodb')
 table = ddb.Table('RoomsStatus')
 
 def lambda_handler(event, context):
-    # TODO implement
+
     response = table.get_item(Key={'UserID' : event['uuid']})
     index=-1
     i=0
@@ -18,34 +18,27 @@ def lambda_handler(event, context):
     t = response['Item']["boiler"]["lastTimeSetOn"]
     
     if response['Item']["boiler"]["isOn"]:
+    #If the boiler is on, we will update the water temperature in the boiler logs
         for setOnLog in response['Item']["boiler"]["SetOnLogs"]:
             if setOnLog["SetOnDate"] == d+","+t:
                 index=i
             i=i+1
             
-         
-        
-        
-        # if index==-1:
-        #   return {
-        #     'statusCode': 100,
-        #     'body': json.dumps('Lambda failed!')
-        #   }
+
            
-        
-        # print(response['Item']["boiler"])
         response2 = table.update_item(Key ={'UserID' :  event['uuid']},
         UpdateExpression="set boiler.currentWaterTemperature =:t, boiler.SetOnLogs[" +str(index)+"].waterTemperature =:t" ,
         ExpressionAttributeValues={':t': Decimal(str(event['waterTemperature']))},
         ReturnValues="UPDATED_NEW")
         
     else:
+    #Update the current water temperature 
         response2 = table.update_item(Key ={'UserID' :  event['uuid']},
         UpdateExpression="set boiler.currentWaterTemperature =:t" ,
         ExpressionAttributeValues={':t': Decimal(str(event['waterTemperature']))},
         ReturnValues="UPDATED_NEW")
     
-    # response = table.get_item(Key={'UserID' : event['uuid']}) 
+
    
     
    
