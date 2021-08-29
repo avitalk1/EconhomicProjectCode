@@ -9,7 +9,6 @@ ddb = boto3.resource('dynamodb')
  
 RoomsStatusTable = ddb.Table('RoomsStatus')
 UserConfigTable = ddb.Table('UserConfig')
-#UserTestTable = ddb.Table('UserTest')
 
 
 now = datetime.now()
@@ -26,7 +25,7 @@ set_time= date_time.strftime("%d-%m-%Y,%H:%M:%S")
 
 
 def lambda_handler(event, context):
-    # TODO implement
+
     
     intro_update_topic = event["floor"] +"."+ event["room"] +".devices.waterTap"
     
@@ -34,26 +33,26 @@ def lambda_handler(event, context):
     
     response_2 = UserConfigTable.get_item(Key={'UserID' : event['uuid']})
     
-    # tapWater = response['Item'][event["floor"]][event["room"]]["devices"]["waterTap"]
+
     index=-1
     i=0
     for tap in response['Item'][event["floor"]][event["room"]]["devices"]["waterTap"]["waterTapStatus"]:
         if tap["number"] == event["number"]:
             index=i
-            print("founddddd")
         i+=1    
         
     if event["status"] == "on": 
+    #add new water tap to room
         _log ={"setOffTime": "Null","setOnDate": set_time,"whoTurnOff": "Null"}
         n=[]
         n.append([event["number"],date_,time])
         
         if index == -1:
-        # print(tapWater["whoIsOn"])
+
             
             k=[{"isOn": True,"lastDateSetOn": date_,"lastTimeSetOn": time,"number": event["number"],"SetOnLogs": [_log],"type":  event["type"]}]
             
-            # update_topic = "set "+intro_update_topic # + ".whoIsOn = list_append(:c,:n), "
+            
             update_topic ="set " + intro_update_topic+".waterTapStatus  = list_append(:w,:k), "
             update_topic += intro_update_topic+".waterTapAmount =:l"
             print(update_topic)
@@ -81,7 +80,7 @@ def lambda_handler(event, context):
                 i=i+1
                 
             if jndex!=-1:
-                # תייקון של הלמידה  
+                #Error detection - if the user turned on the device shortly after we turned it off 
                 date_time_obj = datetime.strptime(response['Item'][event["floor"]][event["room"]]["devices"]["waterTap"]["waterTapStatus"][index]["SetOnLogs"][jndex]["setOffTime"], '%d-%m-%Y,%H:%M:%S')
                 c = now-date_time_obj
                 minutes = int(c.total_seconds() / 60)
@@ -114,21 +113,19 @@ def lambda_handler(event, context):
                 
     
     if event["status"] == "off" :
-        print("XXXXXXXX")
+     #set water tap off
         if not index == -1:    
             d = response['Item'][event["floor"]][event["room"]]["devices"]["waterTap"]["waterTapStatus"][index]["lastDateSetOn"]
             t = response['Item'][event["floor"]][event["room"]]["devices"]["waterTap"]["waterTapStatus"][index]["lastTimeSetOn"]
             
             jndex=-1
             i=0
-            print("XXXXXXXX")
             s =  d+","+ t
     
             
             for setOnLog in response['Item'][event["floor"]][event["room"]]["devices"]["waterTap"]["waterTapStatus"][index]["SetOnLogs"]:
                 if setOnLog["setOnDate"] == s:
                     jndex=i
-                    print("founddddd")
                 i=i+1
             if jndex != -1:
                 update_topic = "set " +intro_update_topic+".waterTapStatus["+str(index)+"].SetOnLogs["+str(jndex)+"].setOffTime =:t ,"+intro_update_topic+".waterTapStatus["+str(index)+"].isOn =:a,"+intro_update_topic+".waterTapStatus["+str(index)+"].SetOnLogs["+str(jndex)+"].whoTurnOff  =:z"
@@ -138,40 +135,7 @@ def lambda_handler(event, context):
                 ReturnValues="UPDATED_NEW") 
                 
             
-        # date_time_obj = datetime.strptime(response['Item'][event["floor"]][event["room"]]["devices"]["waterTap"]["waterTapStatus"][index]["SetOnLogs"][jndex]["setOnDate"], '%d-%m-%Y,%H:%M:%S')
-        # c = now-date_time_obj
-        # minutes = c.total_seconds() / 60   
-        # # minutes=14
-        # total = Decimal(Decimal(minutes) * Decimal(response['Item'][event["floor"]][event["room"]]["devices"]["waterTap"]["waterTapStatus"][index]["SetOnLogs"][jndex]["averageWaterFlow"]))
-        # response_5= UserTestTable.get_item(Key={'UserID' : event['uuid']})
-        
-        # i=0
-        # exp_index =-1
-        # for exp in response_5['Item']['Expenses']:
-        #     if exp['Date'] == date_:
-        #         exp_index =i
-        #     i+=1
-        
-        # if exp_index == -1:
-        #     update_topic = "set Expenses = list_append(:c,:k)"
-        #     print (update_topic)
-        #     today= date_time.strftime("%Y-%m-%d")
-        #     k = [{"Date": today,"electricityExpenses": 0,"waterExpenses": total}]
-            
-        #     # response12 = UserTestTable.update_item(Key ={'UserID' :  event['uuid']},
-        #     response12 = UserTestTable.update_item(Key ={'UserID' :  event['uuid']},
-        #     UpdateExpression=update_topic ,
-        #     ExpressionAttributeValues={':k':k,':c' : response_5["Item"]["Expenses"]},
-        #     ReturnValues="UPDATED_NEW") 
-        # else:
-        #     total = response_5["Item"]["Expenses"][exp_index]["waterExpenses"] + total
-        #     update_topic = "set Expenses["+str(exp_index)+"].waterExpenses =:b"
-            
-        #     response12 = UserTestTable.update_item(Key ={'UserID' : event['uuid']},
-        #     UpdateExpression=update_topic ,
-        #     ExpressionAttributeValues={':b':total},
-        #     ReturnValues="UPDATED_NEW") 
-    
+      
 
         
 
