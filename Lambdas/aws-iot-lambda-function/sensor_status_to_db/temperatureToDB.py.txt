@@ -13,9 +13,10 @@ table = ddb.Table('RoomsStatus')
 
 def lambda_handler(event, context):
     # TODO implement
-    kaak=""
+    K=""
     response = table.get_item(Key={'UserID' : event['uuid']})
     if response['Item'][event["floor"]][event["room"]]["devices"]["ac"]["isOn"] == True:
+    #If the air conditioner is on, we will update the room temperature in the air conditioner logs
         index=0
         i=0
         d =response['Item'][event["floor"]][event["room"]]["devices"]["ac"]["lastDateSetOn"]
@@ -25,23 +26,19 @@ def lambda_handler(event, context):
             if setOnLog["SetOnDate"] == d+","+t:
                 index=i
             i=i+1
-        kaak =", "+ event["floor"]+"."+event["room"]+".devices.ac.SetOnLogs[" +str(index)+ "].roomTemperature =:t"
-        # kaak="lalal"
-        print(kaak)
+        K =", "+ event["floor"]+"."+event["room"]+".devices.ac.SetOnLogs[" +str(index)+ "].roomTemperature =:t"
+    
+    #update the room temperature
     
        
-    
-    # print(response['Item']["boiler"])
     response2 = table.update_item(Key ={'UserID' :  event['uuid']},
-    UpdateExpression="set " +event["floor"]+"."+event["room"]+".roomTemperature =:t"+kaak ,
+    UpdateExpression="set " +event["floor"]+"."+event["room"]+".roomTemperature =:t"+K ,
     ExpressionAttributeValues={':t': Decimal(str(event['temperature']))},
     ReturnValues="UPDATED_NEW")
     
     
     
    
-    
-    # response = table.get_item(Key={'UserID' : event['uuid']}) 
    
    
     return {
