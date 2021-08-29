@@ -21,15 +21,7 @@ d = date_time.strftime("%d-%m-%Y")
 
 def lambda_handler(event, context):
     
-    
-    # TODO implement
-    # response = table.scan(
-    # FilterExpression=Key('UserID').eq(event[ "uuid"]))
-    # if response['Count'] == 0:
-    #     #//insert
-    #     print("insert")
-    # else:
-    #     print("update")
+
     index = 0
     movement_count = event["motion"]
     update_topic = "set "+ event["floor"] +"."+ event["room"] + ".motion.lastTime =:t , "
@@ -74,7 +66,6 @@ def lambda_handler(event, context):
         ExpressionAttributeValues={':t': t,':k':k,':d':d,':c' : motion_json["movmentLogs"]},
                 ReturnValues="UPDATED_NEW") 
 
-    print(response2) 
     
     return {
         'statusCode': 200,
