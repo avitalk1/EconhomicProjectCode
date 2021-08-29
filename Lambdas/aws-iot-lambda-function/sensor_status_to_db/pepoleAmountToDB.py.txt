@@ -18,12 +18,13 @@ ddb = boto3.resource('dynamodb')
 table = ddb.Table('RoomsStatus')
 
 def lambda_handler(event, context):
-    print(event['amount'])
+
     response = table.get_item(Key={'UserID' : event['uuid']})
     update_topic= "set "+event["floor"] +"."+ event["room"] +".pepoleAmountInRoom =:b"
-    if event['amount']>0:
-        #המינוס אחד דפק את החזרה ממצב של חדר ריק השינוי היה לעשות קטן שווה לאפס ואז לאפס את החדר 
+    if event['amount']>0: 
+    #People in the room were identified
         if response['Item'][event["floor"]][event["room"]]["pepoleAmountInRoom"] <= 0:
+        #The room was empty
             if not response['Item'][event["floor"]][event["room"]]["emptyRoomLogs"]["firstEmptyRoomTime"]=="null":
                 index=0
                 i=0
@@ -42,6 +43,7 @@ def lambda_handler(event, context):
             ReturnValues="UPDATED_NEW") 
             
         else:
+        #The room was not empty - only update pepole amount
             print(str(update_topic))
             
             response2 = table.update_item(Key ={'UserID' :  event['uuid']}, 
@@ -49,7 +51,9 @@ def lambda_handler(event, context):
             ExpressionAttributeValues={':b':event['amount']},
             ReturnValues="UPDATED_NEW") 
     else:
+    #An empty room was detected
         if  response['Item'][event["floor"]][event["room"]]["emptyRoomLogs"]["isRoomEmpty"] == False:
+        #The room had not been empty before
             update_topic= update_topic + ", "+event["floor"]+"."+event["room"]+".emptyRoomLogs.isRoomEmpty =:a"
             update_topic= update_topic+ ", "+event["floor"]+"."+event["room"]+".emptyRoomLogs.firstEmptyRoomTime =:t"
             update_topic= update_topic+ ", "+event["floor"]+"."+event["room"]+".emptyRoomLogs.emptyLog = list_append(:c,:k)"
@@ -59,8 +63,7 @@ def lambda_handler(event, context):
             UpdateExpression=update_topic ,
             ExpressionAttributeValues={':b':event['amount'],':a':True,":t":t,":c":response['Item'][event["floor"]][event["room"]]["emptyRoomLogs"]["emptyLog"],":k":k},
             ReturnValues="UPDATED_NEW") 
-        
-    # TODO implement
+
     return {
         'statusCode': 200,
         'body':  json.dumps('Hello from Lambda!')
