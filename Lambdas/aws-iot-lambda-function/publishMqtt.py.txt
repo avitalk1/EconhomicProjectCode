@@ -17,12 +17,7 @@ d = date_time.strftime("%d-%m-%Y")
 set_time = date_time.strftime("%d-%m-%Y,%H:%M:%S")
 
 iot_client = boto3.client('iot-data')
-# response = iot_client.describe_endpoint(
-#     endpointType=' a3a4qqsp3xsqud-ats.iot.eu-west-1.amazonaws.com'
-# )
-# dynamodb_client = boto3.client('dynamodb', region_name="eu-west-1")
-# ddb = boto3.resource('dynamodb')
-# UserConfigTable = ddb.Table('UserConfig')
+
     
 
 def lambda_handler(event, context):
@@ -30,15 +25,11 @@ def lambda_handler(event, context):
     floor = event["Records"][0]["dynamodb"]["NewImage"]["floor"]["S"]
     room = event["Records"][0]["dynamodb"]["NewImage"]["room"]["S"]
     response = table.get_item(Key={'UserID' :uuid})
-    # opName = event["Records"][0]["dynamodb"]["NewImage"]["op"]["S"]
-    # topic= "set op."+ opName +".notifyUserID = :g "
-    # response3 = UserConfigTable.update_item(Key ={'UserID' :  uuid},
-    # UpdateExpression=topic ,
-    # ExpressionAttributeValues={':g':True },
-    # ReturnValues="UPDATED_NEW") 
+
   
     if "MODIFY" == event["Records"][0]["eventName"] and not event["Records"][0]["dynamodb"]["NewImage"]["userAnswer"]["N"]==event["Records"][0]["dynamodb"]["OldImage"]["userAnswer"]["N"]:
         if event["Records"][0]["dynamodb"]["NewImage"]["userAnswer"]["N"] == "1":
+        # the user has confirmed, publish a MQTT message to the devices. and updated that the user has received an alert and confirmed it in the operation logs.
             if event["Records"][0]["dynamodb"]["NewImage"]["op"]["S"] == "waterTapOp":
                 topic = "jobs/" + uuid + '/' + floor + "/" + room + "/pump/state"
                 iot_client.publish(topic=topic,payload=json.dumps({"status":"off"}))
@@ -108,6 +99,7 @@ def lambda_handler(event, context):
                 UpdateExpression=topic ,
                 ExpressionAttributeValues={':list': opLog,":i":i,":d":d,":t": t, ":b":total_notify},
                 ReturnValues="UPDATED_NEW")
+                
             if event["Records"][0]["dynamodb"]["NewImage"]["op"]["S"] == "AcOp":
                 if event["Records"][0]["dynamodb"]["NewImage"]["op_ac"]["S"] == "changeTemperature":
                     oprimalTemp=response['Item']["op"]["AcOp"]["ourLearn"]["roomOptimalTemperature"]
@@ -163,9 +155,10 @@ def lambda_handler(event, context):
                     ReturnValues="UPDATED_NEW")
                         
             
-            
-            print("yey")
+
         if event["Records"][0]["dynamodb"]["NewImage"]["userAnswer"]["N"] =="2":
+        # the user rejected the operation, update the number of our requests and the number of times the user rejected our request
+        
             if event["Records"][0]["dynamodb"]["NewImage"]["op"]["S"] == "waterTapOp":
                 
                 userRefused=response['Item']["op"]["waterTapOp"]["userRefused"] +1
@@ -253,8 +246,7 @@ def lambda_handler(event, context):
                     ReturnValues="UPDATED_NEW")
             
             
-            
-    # TODO implement
+
     return {
         'statusCode': 200,
         'body': json.dumps('Hello from Lambda!')
