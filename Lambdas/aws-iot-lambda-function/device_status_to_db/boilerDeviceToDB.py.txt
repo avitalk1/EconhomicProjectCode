@@ -23,7 +23,7 @@ UserConfigTable = ddb.Table('UserConfig')
 
 
 def lambda_handler(event, context):
-    # TODO implement   
+      
     response = RoomsStatusTable.get_item(Key={'UserID' : event['uuid']})
     response2 = UserConfigTable.get_item(Key={'UserID' : event['uuid']})
     
@@ -31,7 +31,7 @@ def lambda_handler(event, context):
     t = response['Item']["boiler"]["lastTimeSetOn"]
     
     
-    #  תייקון של הלמידה   
+    
     date_time_obj = datetime.strptime(set_time, '%d-%m-%Y,%H:%M:%S')
     c = now-date_time_obj
     minutes = c.total_seconds() / 60
@@ -49,8 +49,9 @@ def lambda_handler(event, context):
         
     if event["status"] == "on":
         if index != -1:
+        # Error detection - if the user turned on the device shortly after we turned it off
             if "us" == response['Item']["boiler"]["SetOnLogs"][index]["whoTurnOff"]:
-                if minutes < 30 and abs(diff) <= 1:
+                if minutes < 30 :
                     topic= "set op.boilerOp.errorCounter = :g "
                     response3 = UserConfigTable.update_item(Key ={'UserID' :  event['uuid']},
                     UpdateExpression=topic ,
@@ -75,6 +76,7 @@ def lambda_handler(event, context):
         ExpressionAttributeValues={':t':set_time , ':k':event['setOffBy'],':a':False},
         ReturnValues="UPDATED_NEW")  
         
+        #Error detection - if the user turned off the boiler at a different temperature than the default temperature
         if event['setOffBy'] == "user":
             if abs(diff) >= 1:
                 topic= "set op.boilerOp.errorCounter = :g , op.boilerOp.averageTemperatureGap =:t "
