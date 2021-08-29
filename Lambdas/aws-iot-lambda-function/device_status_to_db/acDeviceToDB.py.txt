@@ -30,6 +30,7 @@ def lambda_handler(event, context):
     lastDate =response["Item"][event["floor"]][event["room"]]["devices"]["ac"]["lastDateSetOn"]
     index =-1
     i=0
+    #found the last time ac was set on
     for acLog in response["Item"][event["floor"]][event["room"]]["devices"]["ac"]["SetOnLogs"]:
         if acLog["SetOnDate"] == lastDate+","+lastTime:
             index=i
@@ -37,6 +38,7 @@ def lambda_handler(event, context):
     if event['opType'] == "acState":
         if event['status'] == "on":
             if index != -1:
+            #Error detection - if the user turned on the device shortly after we turned it off
                 if response["Item"][event["floor"]][event["room"]]["devices"]["ac"]["SetOnLogs"][index]["whoTurnOff"] == "us":
                     turn_off_time = datetime.strptime(response["Item"][event["floor"]][event["room"]]["devices"]["ac"]["SetOnLogs"][index]["setOffTime"],"%d-%m-%Y,%H:%M:%S")
                     diff = now - turn_off_time
@@ -48,7 +50,8 @@ def lambda_handler(event, context):
                         UpdateExpression=_topic_ ,
                         ExpressionAttributeValues={':t':avg_diff,':g':(response_2['Item']["op"]["AcOp"]["TimeErrorCounter"] + 1) },
                         ReturnValues="UPDATED_NEW")
-                        print("op-ac-turnOffError  ")
+                        print("found op-ac-turnOffError  ")
+            #set on device
             temp = {
                 "currentTemperature": event["ac_temp"],
                 "setTemperatureTime": t,
@@ -88,20 +91,10 @@ def lambda_handler(event, context):
             ExpressionAttributeValues={':a':False ,':t':set_time,":b": event['setOffBy'] },
             ReturnValues="UPDATED_NEW")
 
+#Error detection - if the user changed the temp shortly after we changed
     if event['opType'] == "temperatureSet" and response["Item"][event["floor"]][event["room"]]["devices"]["ac"]["isOn"]==True:
-        # lastTime = response["Item"][event["floor"]][event["room"]]["devices"]["ac"]["lastTimeSetOn"]
-        # lastDate =response["Item"][event["floor"]][event["room"]]["devices"]["ac"]["lastDateSetOn"]
-        # index =-1
-        # i=0
-        # for acLog in response["Item"][event["floor"]][event["room"]]["devices"]["ac"]["SetOnLogs"]:
-        #     if acLog["SetOnDate"] == lastDate+","+lastTime:
-        #         index=i   
-        #     i+=1       
-        # no need       
-            
-        #if index != -1:
         if response["Item"][event["floor"]][event["room"]]["devices"]["ac"]["SetOnLogs"][index]["temperature"]["whoSetTemperature"] == "us":
-            print("op-ac-changeTemperatureError")
+            print("found op-ac-changeTemperatureError")
             temp_gap = event["ac_temp"]- response["Item"][event["floor"]][event["room"]]["devices"]["ac"]["SetOnLogs"][index]["temperature"]["currentTemperature"]
             avg_diff = Decimal(Decimal(response_2['Item']["op"]["AcOp"]["tempetureGapErrorCounter"]* Decimal(response_2['Item']["op"]["AcOp"]["averageTemperatureGap"])+ Decimal(temp_gap))/(response_2['Item']["op"]["AcOp"]["tempetureGapErrorCounter"] + 1))
             _topic_= "set op.AcOp.tempetureGapErrorCounter = :g , op.AcOp.averageTemperatureGap =:t "
@@ -110,7 +103,7 @@ def lambda_handler(event, context):
             ExpressionAttributeValues={':t':avg_diff,':g':(response_2['Item']["op"]["AcOp"]["tempetureGapErrorCounter"] + 1) },
             ReturnValues="UPDATED_NEW")
             
-                    
+        #set off device            
         k= {
                 "currentTemperature": event["ac_temp"],
                 "setTemperatureTime": set_time,
@@ -121,7 +114,7 @@ def lambda_handler(event, context):
         UpdateExpression=topic ,
         ExpressionAttributeValues={':a':k },
         ReturnValues="UPDATED_NEW")
-    print("LL")
+
     # TODO implement
     return {
         'statusCode': 200,
